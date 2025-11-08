@@ -1,4 +1,3 @@
-// Harita oluşturma
 let map = L.map("map").setView([39.0, 35.0], 6);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "&copy; OpenStreetMap contributors"
@@ -8,41 +7,40 @@ let markers = [];
 let routeLine = null;
 let userMarker = null;
 
-// KMZ yerine gömülü GeoJSON verisi
-const rotaData = {
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "properties": { "name": "Örnek Nokta 1" },
-      "geometry": { "type": "Point", "coordinates": [35.0, 39.0] }
-    },
-    {
-      "type": "Feature",
-      "properties": { "name": "Örnek Nokta 2" },
-      "geometry": { "type": "Point", "coordinates": [35.2, 39.1] }
-    }
-    // Buraya tüm KMZ noktalarını GeoJSON formatında ekleyebilirsin
-  ]
-};
+// rota.json yükleme ve haritaya ekleme
+async function loadRoute() {
+  try {
+    const resp = await fetch('rota.json');
+    const rotaData = await resp.json();
 
-// GeoJSON verisini haritaya ekle
-L.geoJSON(rotaData, {
-  onEachFeature: (feature, layer) => {
-    if (feature.properties.name) {
-      layer.bindPopup(`
-        <b>${feature.properties.name}</b><br>
-        <button onclick="startRoute(${feature.geometry.coordinates[1]}, ${feature.geometry.coordinates[0]})">Yol Tarifi</button>
-      `);
-      markers.push({
-        name: feature.properties.name,
-        lat: feature.geometry.coordinates[1],
-        lon: feature.geometry.coordinates[0],
-        marker: layer
-      });
+    markers.forEach(m => map.removeLayer(m.marker));
+    markers = [];
+
+    L.geoJSON(rotaData, {
+      onEachFeature: (feature, layer) => {
+        const name = feature.properties?.name || "İsimsiz";
+        const [lon, lat] = feature.geometry.coordinates;
+
+        layer.bindPopup(`
+          <b>${name}</b><br>
+          <button onclick="startRoute(${lat}, ${lon})">Yol Tarifi</button>
+        `);
+
+        markers.push({ name, lat, lon, marker: layer });
+      }
+    }).addTo(map);
+
+    if (markers.length > 0) {
+      const group = L.featureGroup(markers.map(m => m.marker));
+      map.fitBounds(group.getBounds());
     }
+  } catch (err) {
+    console.error("Rota yüklenemedi:", err);
   }
-}).addTo(map);
+}
+
+// Site açıldığında rota yükle
+loadRoute();
 
 // Arama kutusu
 document.getElementById("searchBox").addEventListener("input", (e) => {
@@ -67,7 +65,6 @@ if (navigator.geolocation) {
       userMarker.setLatLng([lat, lon]);
     }
 
-    // Rotayı güncelle
     if (routeLine) {
       const destLatLng = routeLine.getLatLngs()[1];
       routeLine.setLatLngs([[lat, lon], destLatLng]);
@@ -84,6 +81,5 @@ function startRoute(destLat, destLon) {
     if (routeLine) map.removeLayer(routeLine);
     routeLine = L.polyline([startLatLng, [destLat, destLon]], { color: 'blue', dashArray: '5,10' }).addTo(map);
   }
-  // Google Maps yönlendirmesi
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLon}`);
 }
