@@ -10,7 +10,7 @@ let userMarker = null;
 // rota.json yükleme ve haritaya ekleme
 async function loadRoute() {
   try {
-    const resp = await fetch('rota.json');
+    const resp = await fetch('assets/rota.json');
     const rotaData = await resp.json();
 
     markers.forEach(m => map.removeLayer(m.marker));
