@@ -1,3 +1,4 @@
+// Harita oluşturma
 let map = L.map("map").setView([39.0, 35.0], 6);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "&copy; OpenStreetMap contributors"
@@ -7,41 +8,48 @@ let markers = [];
 let routeLine = null;
 let userMarker = null;
 
-// KMZ dosyası seçildiğinde
-document.getElementById("kmzInput").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+// KMZ dosyasını otomatik yükleme ve işleme
+async function loadKMZFromServer(url) {
+  try {
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    const zip = await JSZip.loadAsync(blob);
+    const kmlFile = Object.keys(zip.files).find(name => name.endsWith(".kml"));
+    const kmlText = await zip.files[kmlFile].async("text");
 
-  const zip = await JSZip.loadAsync(file);
-  const kmlFile = Object.keys(zip.files).find(name => name.endsWith(".kml"));
-  const kmlText = await zip.files[kmlFile].async("text");
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(kmlText, "text/xml");
+    const placemarks = xml.getElementsByTagName("Placemark");
 
-  const parser = new DOMParser();
-  const xml = parser.parseFromString(kmlText, "text/xml");
-  const placemarks = xml.getElementsByTagName("Placemark");
+    // Önceki markerları temizle
+    markers.forEach(m => map.removeLayer(m.marker));
+    markers = [];
 
-  markers = [];
-  map.eachLayer((layer) => { if (layer instanceof L.Marker) map.removeLayer(layer); });
+    for (let p of placemarks) {
+      const name = p.getElementsByTagName("name")[0]?.textContent || "İsimsiz";
+      const coords = p.getElementsByTagName("coordinates")[0]?.textContent.trim();
+      if (!coords) continue;
 
-  for (let p of placemarks) {
-    const name = p.getElementsByTagName("name")[0]?.textContent || "İsimsiz";
-    const coords = p.getElementsByTagName("coordinates")[0]?.textContent.trim();
-    if (!coords) continue;
+      const [lon, lat] = coords.split(",").map(Number);
 
-    const [lon, lat] = coords.split(",").map(Number);
+      const marker = L.marker([lat, lon]).addTo(map).bindPopup(`
+        <b>${name}</b><br>
+        <button onclick="startRoute(${lat}, ${lon})">Yol Tarifi</button>
+      `);
+      markers.push({ name, lat, lon, marker });
+    }
 
-    const marker = L.marker([lat, lon]).addTo(map).bindPopup(`
-      <b>${name}</b><br>
-      <button onclick="startRoute(${lat}, ${lon})">Yol Tarifi</button>
-    `);
-    markers.push({ name, lat, lon, marker });
+    if (markers.length > 0) {
+      const group = L.featureGroup(markers.map(m => m.marker));
+      map.fitBounds(group.getBounds());
+    }
+  } catch (err) {
+    console.error("KMZ yüklenemedi:", err);
   }
+}
 
-  if (markers.length > 0) {
-    const group = L.featureGroup(markers.map(m => m.marker));
-    map.fitBounds(group.getBounds());
-  }
-});
+// Site açıldığında otomatik KMZ yükle
+loadKMZFromServer('assets/rota.kmz');
 
 // Arama kutusu
 document.getElementById("searchBox").addEventListener("input", (e) => {
@@ -68,7 +76,8 @@ if (navigator.geolocation) {
 
     // Rotayı güncelle
     if (routeLine) {
-      routeLine.setLatLngs([[lat, lon], routeLine.getLatLngs()[1]]);
+      const destLatLng = routeLine.getLatLngs()[1];
+      routeLine.setLatLngs([[lat, lon], destLatLng]);
     }
 
     map.setView([lat, lon], map.getZoom());
@@ -82,5 +91,6 @@ function startRoute(destLat, destLon) {
     if (routeLine) map.removeLayer(routeLine);
     routeLine = L.polyline([startLatLng, [destLat, destLon]], { color: 'blue', dashArray: '5,10' }).addTo(map);
   }
+  // Google Maps yönlendirmesi
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLon}`);
 }
