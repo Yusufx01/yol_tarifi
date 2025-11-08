@@ -8,48 +8,41 @@ let markers = [];
 let routeLine = null;
 let userMarker = null;
 
-// KMZ dosyasını otomatik yükleme ve işleme
-async function loadKMZFromServer(url) {
-  try {
-    const resp = await fetch(url);
-    const blob = await resp.blob();
-    const zip = await JSZip.loadAsync(blob);
-    const kmlFile = Object.keys(zip.files).find(name => name.endsWith(".kml"));
-    const kmlText = await zip.files[kmlFile].async("text");
+// KMZ yerine gömülü GeoJSON verisi
+const rotaData = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Örnek Nokta 1" },
+      "geometry": { "type": "Point", "coordinates": [35.0, 39.0] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Örnek Nokta 2" },
+      "geometry": { "type": "Point", "coordinates": [35.2, 39.1] }
+    }
+    // Buraya tüm KMZ noktalarını GeoJSON formatında ekleyebilirsin
+  ]
+};
 
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(kmlText, "text/xml");
-    const placemarks = xml.getElementsByTagName("Placemark");
-
-    // Önceki markerları temizle
-    markers.forEach(m => map.removeLayer(m.marker));
-    markers = [];
-
-    for (let p of placemarks) {
-      const name = p.getElementsByTagName("name")[0]?.textContent || "İsimsiz";
-      const coords = p.getElementsByTagName("coordinates")[0]?.textContent.trim();
-      if (!coords) continue;
-
-      const [lon, lat] = coords.split(",").map(Number);
-
-      const marker = L.marker([lat, lon]).addTo(map).bindPopup(`
-        <b>${name}</b><br>
-        <button onclick="startRoute(${lat}, ${lon})">Yol Tarifi</button>
+// GeoJSON verisini haritaya ekle
+L.geoJSON(rotaData, {
+  onEachFeature: (feature, layer) => {
+    if (feature.properties.name) {
+      layer.bindPopup(`
+        <b>${feature.properties.name}</b><br>
+        <button onclick="startRoute(${feature.geometry.coordinates[1]}, ${feature.geometry.coordinates[0]})">Yol Tarifi</button>
       `);
-      markers.push({ name, lat, lon, marker });
+      markers.push({
+        name: feature.properties.name,
+        lat: feature.geometry.coordinates[1],
+        lon: feature.geometry.coordinates[0],
+        marker: layer
+      });
     }
-
-    if (markers.length > 0) {
-      const group = L.featureGroup(markers.map(m => m.marker));
-      map.fitBounds(group.getBounds());
-    }
-  } catch (err) {
-    console.error("KMZ yüklenemedi:", err);
   }
-}
-
-// Site açıldığında otomatik KMZ yükle
-loadKMZFromServer('assets/rota.kmz');
+}).addTo(map);
 
 // Arama kutusu
 document.getElementById("searchBox").addEventListener("input", (e) => {
