@@ -25,3 +25,6 @@ body {
   height: calc(100vh - 48px);
   width: 100%;
 }
+.leaflet-popup-content {
+  font-size: 16px;
+}
