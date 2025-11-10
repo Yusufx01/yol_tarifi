@@ -27,28 +27,27 @@ fetch('assets/rota.json')
     markers = data.features
       .filter(feature => {
         const coords = feature.geometry?.coordinates;
-        const siteCode = feature.properties?.Site_Code?.trim();
+        const code = feature.properties?.Site_Code?.trim();
         return coords &&
                Array.isArray(coords) &&
                coords.length >= 2 &&
                !isNaN(coords[0]) &&
                !isNaN(coords[1]) &&
-               siteCode && siteCode.length > 0;
+               code && code.length > 0;
       })
       .map(feature => {
         const [lng, lat] = feature.geometry.coordinates;
-        const siteCode = feature.properties.Site_Code.trim();
-        const siteName = feature.properties.Sıte_Name?.trim() || siteCode;
+        const siteCode = feature.properties.Site_Code.trim(); // Site_Code kullanıyoruz
 
         const marker = L.marker([lat, lng]).addTo(map);
         marker.bindPopup(`
-          <b>${siteName}</b><br>
+          <b>${siteCode}</b><br>
           <button onclick="openRoute(${lat}, ${lng})">Yol Tarifi</button>
         `);
 
         return {
-          name: siteCode,        // Arama için Site_Code kullanılıyor
-          displayName: siteName,  // Popup veya öneride gösterilecek isim
+          name: siteCode,       // Arama ve input için Site_Code
+          displayName: siteCode, // Öneri ve popup da Site_Code
           lowerName: siteCode.toLowerCase(),
           marker
         };
@@ -69,12 +68,12 @@ function searchAndFocus(query) {
   suggestions.innerHTML = '';
   matches.forEach(m => {
     const li = document.createElement('li');
-    li.textContent = m.displayName;  // öneride Site_Name gösteriyoruz
+    li.textContent = m.displayName;  // Artık sadece Site_Code görünecek
     li.addEventListener('click', () => {
       map.setView(m.marker.getLatLng(), 16);
       m.marker.openPopup();
       suggestions.innerHTML = '';
-      searchInput.value = m.name;  // inputta Site_Code kalır
+      searchInput.value = m.name;
     });
     suggestions.appendChild(li);
   });
