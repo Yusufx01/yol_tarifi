@@ -27,17 +27,18 @@ fetch('assets/rota.json')
     markers = data.features
       .filter(feature => {
         const coords = feature.geometry?.coordinates;
-        const name = feature.properties?.name?.trim(); // <-- Burada name kullanıyoruz
+        const siteCode = feature.properties?.Site_Code?.trim();
         return coords &&
                Array.isArray(coords) &&
                coords.length >= 2 &&
                !isNaN(coords[0]) &&
                !isNaN(coords[1]) &&
-               name && name.length > 0;
+               siteCode && siteCode.length > 0;
       })
       .map(feature => {
         const [lng, lat] = feature.geometry.coordinates;
-        const siteName = feature.properties.name.trim(); // <-- Burada da name
+        const siteCode = feature.properties.Site_Code.trim();
+        const siteName = feature.properties.Sıte_Name?.trim() || siteCode;
 
         const marker = L.marker([lat, lng]).addTo(map);
         marker.bindPopup(`
@@ -46,8 +47,9 @@ fetch('assets/rota.json')
         `);
 
         return {
-          name: siteName,
-          lowerName: siteName.toLowerCase(),
+          name: siteCode,        // Arama için Site_Code kullanılıyor
+          displayName: siteName,  // Popup veya öneride gösterilecek isim
+          lowerName: siteCode.toLowerCase(),
           marker
         };
       });
@@ -67,12 +69,12 @@ function searchAndFocus(query) {
   suggestions.innerHTML = '';
   matches.forEach(m => {
     const li = document.createElement('li');
-    li.textContent = m.name;
+    li.textContent = m.displayName;  // öneride Site_Name gösteriyoruz
     li.addEventListener('click', () => {
       map.setView(m.marker.getLatLng(), 16);
       m.marker.openPopup();
       suggestions.innerHTML = '';
-      searchInput.value = m.name;
+      searchInput.value = m.name;  // inputta Site_Code kalır
     });
     suggestions.appendChild(li);
   });
