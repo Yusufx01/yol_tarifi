@@ -6,6 +6,12 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
+// Google Maps yönlendirme
+function openRoute(lat, lng) {
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+  window.open(url, '_blank');
+}
+
 // GeoJSON yükle
 fetch('assets/rota.json')
   .then(res => res.json())
@@ -30,7 +36,9 @@ fetch('assets/rota.json')
 
     const searchInput = document.getElementById('searchInput');
     const suggestions = document.getElementById('suggestions');
+    const searchBtn = document.getElementById('searchBtn');
 
+    // Yazarken öneri
     searchInput.addEventListener('input', () => {
       const query = searchInput.value.toLowerCase();
       suggestions.innerHTML = '';
@@ -51,16 +59,24 @@ fetch('assets/rota.json')
         suggestions.appendChild(li);
       });
 
-      // Eğer sadece bir eşleşme varsa otomatik aç
+      // Tek eşleşme varsa otomatik odaklan
       if (matches.length === 1) {
         map.setView(matches[0].marker.getLatLng(), 16);
         matches[0].marker.openPopup();
       }
     });
-  });
 
-// Google Maps yönlendirme
-function openRoute(lat, lng) {
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-  window.open(url, '_blank');
-}
+    // Ara butonuna tıklandığında odaklan
+    searchBtn.addEventListener('click', () => {
+      const query = searchInput.value.toLowerCase();
+      const found = markers.find(m => m.lowerName.includes(query));
+      if(found) {
+        map.setView(found.marker.getLatLng(), 16);
+        found.marker.openPopup();
+        suggestions.innerHTML = '';
+      } else {
+        alert('Saha bulunamadı.');
+      }
+    });
+
+  });
