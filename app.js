@@ -26,9 +26,8 @@ fetch('assets/rota.json')
   .then(data => {
     markers = data.features
       .filter(feature => {
-        // GEÇERLİ VERİ FİLTRESİ
         const coords = feature.geometry?.coordinates;
-        const name = feature.properties?.Sıte_Name?.trim();
+        const name = feature.properties?.name?.trim(); // <-- Burada name kullanıyoruz
         return coords &&
                Array.isArray(coords) &&
                coords.length >= 2 &&
@@ -38,7 +37,7 @@ fetch('assets/rota.json')
       })
       .map(feature => {
         const [lng, lat] = feature.geometry.coordinates;
-        const siteName = feature.properties.Sıte_Name.trim();
+        const siteName = feature.properties.name.trim(); // <-- Burada da name
 
         const marker = L.marker([lat, lng]).addTo(map);
         marker.bindPopup(`
@@ -61,7 +60,7 @@ fetch('assets/rota.json')
 
 // ARAMA FONKSİYONU
 function searchAndFocus(query) {
-  if (!markers.length) return; // JSON henüz yüklenmemişse
+  if (!markers.length) return;
   const q = query.trim().toLowerCase();
   const matches = markers.filter(m => m.lowerName.includes(q));
 
