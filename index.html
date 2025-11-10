@@ -1,35 +1,16 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Saha Haritası</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rota Haritası</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    html, body { height: 100%; margin: 0; }
-    #map { height: 100%; width: 100%; }
-    .control-panel {
-      position: absolute;
-      top: 10px; left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,0.9);
-      padding: 8px 12px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      display: flex;
-      gap: 8px;
-      z-index: 1000;
-    }
-    input { padding: 6px; border-radius: 5px; border: 1px solid #ccc; }
-    button { padding: 6px 10px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #0056b3; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="control-panel">
-    <input id="searchInput" placeholder="Saha adı girin" />
-    <button id="searchBtn">Ara</button>
-    <button id="locationBtn">Konum</button>
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Saha adını yazın">
+    <ul id="suggestions"></ul>
   </div>
   <div id="map"></div>
 
