@@ -12,74 +12,76 @@ function openRoute(lat, lng) {
   window.open(url, '_blank');
 }
 
+// ARAMA ELEMENTLERİNİ TANIMLA
+const searchInput = document.getElementById('searchInput');
+const suggestions = document.getElementById('suggestions');
+const searchBtn = document.getElementById('searchBtn');
+
+// MARKERS ARRAY'İ
+let markers = [];
+
 // GEOJSON VERİLERİ YÜKLE
 fetch('assets/rota.json')
   .then(res => res.json())
   .then(data => {
-    const markers = [];
-
-    // MARKER OLUŞTUR
-    data.features.forEach(feature => {
+    markers = data.features.map(feature => {
       const [lng, lat] = feature.geometry.coordinates;
       const siteName = feature.properties.Sıte_Name.trim();
-      const marker = L.marker([lat, lng]).addTo(map);
 
+      const marker = L.marker([lat, lng]).addTo(map);
       marker.bindPopup(`
         <b>${siteName}</b><br>
         <button onclick="openRoute(${lat}, ${lng})">Yol Tarifi</button>
       `);
 
-      markers.push({
+      return {
         name: siteName,
         lowerName: siteName.toLowerCase(),
         marker
-      });
+      };
     });
-
-    // ARAMA ELEMANLARI
-    const searchInput = document.getElementById('searchInput');
-    const suggestions = document.getElementById('suggestions');
-    const searchBtn = document.getElementById('searchBtn');
-
-    // YAZARKEN ÖNERİ
-    searchInput.addEventListener('input', () => {
-      const query = searchInput.value.trim().toLowerCase();
-      suggestions.innerHTML = '';
-
-      if (!query) return;
-
-      const matches = markers.filter(m => m.lowerName.includes(query));
-
-      matches.forEach(m => {
-        const li = document.createElement('li');
-        li.textContent = m.name;
-        li.addEventListener('click', () => {
-          map.setView(m.marker.getLatLng(), 16);
-          m.marker.openPopup();
-          suggestions.innerHTML = '';
-          searchInput.value = m.name;
-        });
-        suggestions.appendChild(li);
-      });
-
-      // TEK EŞLEŞME VARSA OTOMATİK ODakLAN
-      if (matches.length === 1) {
-        map.setView(matches[0].marker.getLatLng(), 16);
-        matches[0].marker.openPopup();
-      }
-    });
-
-    // ARA BUTONUNA TIKLANDIĞINDA
-    searchBtn.addEventListener('click', () => {
-      const query = searchInput.value.trim().toLowerCase();
-      const found = markers.find(m => m.lowerName.includes(query));
-      if(found) {
-        map.setView(found.marker.getLatLng(), 16);
-        found.marker.openPopup();
-        suggestions.innerHTML = '';
-      } else {
-        alert('Saha bulunamadı.');
-      }
-    });
-
   });
+
+// ARAMA FONKSİYONU
+function searchAndFocus(query) {
+  if (!markers.length) return; // JSON henüz yüklenmemişse
+  const q = query.trim().toLowerCase();
+  const matches = markers.filter(m => m.lowerName.includes(q));
+
+  suggestions.innerHTML = '';
+  matches.forEach(m => {
+    const li = document.createElement('li');
+    li.textContent = m.name;
+    li.addEventListener('click', () => {
+      map.setView(m.marker.getLatLng(), 16);
+      m.marker.openPopup();
+      suggestions.innerHTML = '';
+      searchInput.value = m.name;
+    });
+    suggestions.appendChild(li);
+  });
+
+  if (matches.length === 1) {
+    map.setView(matches[0].marker.getLatLng(), 16);
+    matches[0].marker.openPopup();
+  }
+}
+
+// YAZARKEN ÖNERİ
+searchInput.addEventListener('input', () => {
+  searchAndFocus(searchInput.value);
+});
+
+// ARA BUTONU
+searchBtn.addEventListener('click', () => {
+  const query = searchInput.value;
+  if (!query) return;
+  const found = markers.find(m => m.lowerName.includes(query));
+  if (found) {
+    map.setView(found.marker.getLatLng(), 16);
+    found.marker.openPopup();
+    suggestions.innerHTML = '';
+  } else {
+    alert('Saha bulunamadı.');
+  }
+});
