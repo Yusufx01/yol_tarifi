@@ -1,13 +1,16 @@
+/* GENEL */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
 }
 
+/* HARİTA */
 #map {
   width: 100%;
   height: 100vh;
 }
 
+/* ARAMA KUTUSU */
 .search-container {
   position: absolute;
   top: 10px;
@@ -21,6 +24,7 @@ body {
   width: 250px;
 }
 
+/* INPUT */
 #searchInput {
   padding: 5px;
   width: 70%;
@@ -28,6 +32,7 @@ body {
   border-radius: 4px;
 }
 
+/* ARA BUTONU */
 #searchBtn {
   padding: 5px 10px;
   margin-left: 5px;
@@ -42,6 +47,7 @@ body {
   background-color: #0056b3;
 }
 
+/* ÖNERİ LİSTESİ */
 #suggestions {
   list-style: none;
   padding: 0;
@@ -50,6 +56,7 @@ body {
   overflow-y: auto;
   border: 1px solid #ccc;
   border-radius: 4px;
+  background: white;
 }
 
 #suggestions li {
