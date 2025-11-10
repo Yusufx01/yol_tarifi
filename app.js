@@ -24,21 +24,38 @@ let markers = [];
 fetch('assets/rota.json')
   .then(res => res.json())
   .then(data => {
-    markers = data.features.map(feature => {
-      const [lng, lat] = feature.geometry.coordinates;
-      const siteName = feature.properties.Sıte_Name.trim();
+    markers = data.features
+      .filter(feature => {
+        // GEÇERLİ VERİ FİLTRESİ
+        const coords = feature.geometry?.coordinates;
+        const name = feature.properties?.Sıte_Name?.trim();
+        return coords &&
+               Array.isArray(coords) &&
+               coords.length >= 2 &&
+               !isNaN(coords[0]) &&
+               !isNaN(coords[1]) &&
+               name && name.length > 0;
+      })
+      .map(feature => {
+        const [lng, lat] = feature.geometry.coordinates;
+        const siteName = feature.properties.Sıte_Name.trim();
 
-      const marker = L.marker([lat, lng]).addTo(map);
-      marker.bindPopup(`
-        <b>${siteName}</b><br>
-        <button onclick="openRoute(${lat}, ${lng})">Yol Tarifi</button>
-      `);
+        const marker = L.marker([lat, lng]).addTo(map);
+        marker.bindPopup(`
+          <b>${siteName}</b><br>
+          <button onclick="openRoute(${lat}, ${lng})">Yol Tarifi</button>
+        `);
 
-      return {
-        name: siteName,
-        lowerName: siteName.toLowerCase(),
-        marker
-      };
+        return {
+          name: siteName,
+          lowerName: siteName.toLowerCase(),
+          marker
+        };
+      });
+
+    // Arama listener fetch tamamlandıktan sonra
+    searchInput.addEventListener('input', () => {
+      searchAndFocus(searchInput.value);
     });
   });
 
@@ -66,11 +83,6 @@ function searchAndFocus(query) {
     matches[0].marker.openPopup();
   }
 }
-
-// YAZARKEN ÖNERİ
-searchInput.addEventListener('input', () => {
-  searchAndFocus(searchInput.value);
-});
 
 // ARA BUTONU
 searchBtn.addEventListener('click', () => {
