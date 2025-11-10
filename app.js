@@ -21,16 +21,17 @@ fetch('assets/rota.json')
     // MARKER OLUŞTUR
     data.features.forEach(feature => {
       const [lng, lat] = feature.geometry.coordinates;
+      const siteName = feature.properties.Sıte_Name.trim();
       const marker = L.marker([lat, lng]).addTo(map);
 
       marker.bindPopup(`
-        <b>${feature.properties.Sıte_Name}</b><br>
+        <b>${siteName}</b><br>
         <button onclick="openRoute(${lat}, ${lng})">Yol Tarifi</button>
       `);
 
       markers.push({
-        name: feature.properties.Sıte_Name,
-        lowerName: feature.properties.Sıte_Name.toLowerCase(),
+        name: siteName,
+        lowerName: siteName.toLowerCase(),
         marker
       });
     });
@@ -42,7 +43,7 @@ fetch('assets/rota.json')
 
     // YAZARKEN ÖNERİ
     searchInput.addEventListener('input', () => {
-      const query = searchInput.value.toLowerCase();
+      const query = searchInput.value.trim().toLowerCase();
       suggestions.innerHTML = '';
 
       if (!query) return;
@@ -70,7 +71,7 @@ fetch('assets/rota.json')
 
     // ARA BUTONUNA TIKLANDIĞINDA
     searchBtn.addEventListener('click', () => {
-      const query = searchInput.value.toLowerCase();
+      const query = searchInput.value.trim().toLowerCase();
       const found = markers.find(m => m.lowerName.includes(query));
       if(found) {
         map.setView(found.marker.getLatLng(), 16);
